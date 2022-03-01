@@ -1,0 +1,21 @@
+[package]
+name = "actix-prerender"
+version = "0.1.0"
+edition = "2021"
+authors = ["Martin Mariano <contato@martinmariano.com>"]
+description = "Actix middleware that sends requests to Prerender.io or a custom Prerender service URL."
+repository = ""
+license = "MIT"
+
+[dependencies]
+actix-service = "2"
+actix-utils = "3"
+actix-web = { version = "4", default-features = false }
+smartstring = "1"
+
+futures-util = "0.3"
+log = "0.4"
+
+[dev-dependencies]
+actix-web = { version = "4", default_features = false, features = ["macros"] }
+env_logger = "0.9"
