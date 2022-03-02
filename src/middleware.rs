@@ -1,7 +1,7 @@
 use std::rc::Rc;
 
 use actix_service::Service;
-use actix_web::body::BoxBody;
+use actix_web::body::{EitherBody, MessageBody};
 use actix_web::dev::{ServiceRequest, ServiceResponse};
 use actix_web::http::header::HeaderMap;
 use actix_web::http::uri::PathAndQuery;
@@ -9,6 +9,7 @@ use actix_web::http::{header, Method};
 use actix_web::{Error, HttpResponse};
 use futures_util::future::LocalBoxFuture;
 use futures_util::TryFutureExt;
+use log::debug;
 use reqwest::Client;
 use url::Url;
 
@@ -91,7 +92,7 @@ impl<S> PrerenderMiddleware<S> {
         let scheme = req.uri().scheme_str().unwrap_or("http");
         let url_path_query = req_uri.path_and_query().map(PathAndQuery::as_str).unwrap();
 
-        format!("{}{}://{}{}", service_url, scheme, host, url_path_query)
+        format!("{}render?url={}://{}{}", service_url, scheme, host, url_path_query)
     }
 
     pub async fn get_rendered_response(inner: &Inner, req: ServiceRequest) -> Result<ServiceResponse, PrerenderError> {
@@ -110,6 +111,8 @@ impl<S> PrerenderMiddleware<S> {
         );
 
         let url_to_request = Self::prepare_build_api_url(&inner.prerender_service_url, &req);
+
+        debug!("sending request to: {}", &url_to_request);
         let prerender_response = inner
             .inner_client
             .get(url_to_request)
@@ -122,14 +125,15 @@ impl<S> PrerenderMiddleware<S> {
     }
 }
 
-impl<S> Service<ServiceRequest> for PrerenderMiddleware<S>
+impl<S, B> Service<ServiceRequest> for PrerenderMiddleware<S>
 where
-    S: Service<ServiceRequest, Response = ServiceResponse, Error = Error>,
+    S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error>,
     S::Future: 'static,
+    B: MessageBody,
 {
-    type Response = ServiceResponse<BoxBody>;
+    type Response = ServiceResponse<EitherBody<B>>;
     type Error = Error;
-    type Future = LocalBoxFuture<'static, Result<ServiceResponse<BoxBody>, Error>>;
+    type Future = LocalBoxFuture<'static, Result<ServiceResponse<EitherBody<B>>, Error>>;
 
     actix_service::forward_ready!(service);
 
@@ -137,11 +141,16 @@ where
         // life goes on
         if !should_prerender(&req) {
             let fut = self.service.call(req);
-            return Box::pin(async move { fut.await });
+            return Box::pin(async move { fut.await.map(ServiceResponse::map_into_left_body) });
         }
 
         let inner = Rc::clone(&self.inner);
-        Box::pin(async move { Self::get_rendered_response(&inner, req).await.map_err(Into::into) })
+        Box::pin(async move {
+            Self::get_rendered_response(&inner, req)
+                .await
+                .map(ServiceResponse::map_into_right_body)
+                .map_err(Into::into)
+        })
     }
 }
 
@@ -153,6 +162,7 @@ mod tests {
     use actix_web::middleware::Compat;
     use actix_web::test::TestRequest;
     use actix_web::App;
+    use url::Url;
 
     use crate::middleware::{prerender_url, should_prerender, PrerenderMiddleware};
 
@@ -225,24 +235,24 @@ mod tests {
 
     #[actix_web::test]
     async fn test_redirect_url() {
-        let req_url = "http://yourserver.com/clothes/tshirts?query=xl";
+        let req_url = "http://yourserver.com/clothes/tshirts/red-dotted";
 
-        let req = TestRequest::get()
+        let req = TestRequest::post()
             .insert_header((
                 header::USER_AGENT,
-                "Mozilla/5.0 (X11; Linux x86_64; rv:62.0) Gecko/20100101 Firefox/62.0",
+                "LinkedInBot/1.0 (compatible; Mozilla/5.0; Jakarta Commons-HttpClient/3.1 +http://www.linkedin.com)",
             ))
             .uri(req_url)
             .to_srv_request();
 
-        // let middleware = create_middleware()
-        //     .new_transform(test::ok_service())
-        //     .into_inner()
-        //     .unwrap();
-
         assert_eq!(
             PrerenderMiddleware::<()>::prepare_build_api_url(&prerender_url(), &req),
-            format!("{}{}", prerender_url(), req_url)
+            format!("{}render?url={}", prerender_url(), req_url)
+        );
+
+        assert_eq!(
+            PrerenderMiddleware::<()>::prepare_build_api_url(&Url::parse("http://localhost:5000").unwrap(), &req),
+            format!("http://localhost:5000/render?url={}", req_url)
         );
     }
 }

@@ -3,7 +3,7 @@ use crate::{middleware, PrerenderError, PrerenderMiddleware};
 use actix_service::{Service, Transform};
 use actix_utils::future;
 use actix_utils::future::Ready;
-use actix_web::body::BoxBody;
+use actix_web::body::{EitherBody, MessageBody};
 use actix_web::dev::{ServiceRequest, ServiceResponse};
 use actix_web::Error;
 use reqwest::Client;
@@ -81,12 +81,14 @@ impl Prerender {
     }
 }
 
-impl<S> Transform<S, ServiceRequest> for Prerender
+impl<S, B> Transform<S, ServiceRequest> for Prerender
 where
-    S: Service<ServiceRequest, Response = ServiceResponse, Error = Error>,
+    S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error>,
     S::Future: 'static,
+
+    B: MessageBody + 'static,
 {
-    type Response = ServiceResponse<BoxBody>;
+    type Response = ServiceResponse<EitherBody<B>>;
     type Error = Error;
     type Transform = PrerenderMiddleware<S>;
     type InitError = ();
