@@ -1,10 +1,7 @@
-use crate::errors::PrerenderError;
-use crate::{IGNORED_EXTENSIONS, USER_AGENTS};
 use actix_service::{Service, Transform};
 use actix_utils::future;
 use actix_utils::future::Ready;
 use actix_web::body::BoxBody;
-
 use actix_web::dev::{ServiceRequest, ServiceResponse};
 use actix_web::http::header::HeaderMap;
 use actix_web::http::uri::PathAndQuery;
@@ -13,48 +10,59 @@ use actix_web::{Error, HttpResponse};
 use futures_util::future::LocalBoxFuture;
 use futures_util::TryFutureExt;
 use reqwest::Client;
+use std::rc::Rc;
 use url::Url;
+
+use crate::errors::PrerenderError;
+use crate::{IGNORED_EXTENSIONS, USER_AGENTS};
 
 #[derive(Debug, Clone)]
 pub struct Prerender {
-    prerender_service_url: Url,
-    inner_client: Client,
+    inner: Rc<Inner>,
 }
 
 #[derive(Debug, Clone)]
 pub struct Inner {
     prerender_service_url: Url,
     inner_client: Client,
+    prerender_token: String,
 }
 
 impl Prerender {}
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct PrerenderBuilder {}
 
 impl PrerenderBuilder {
-    pub fn use_prerender_io(mut self) -> Prerender {
-        Prerender {
+    pub fn use_prerender_io(self, token: String) -> Prerender {
+        let inner = Inner {
             prerender_service_url: prerender_url(),
-            inner_client: Default::default(),
-        }
+            inner_client: Client::default(),
+            prerender_token: token,
+        };
+
+        Prerender { inner: Rc::new(inner) }
     }
 
     pub fn use_custom_prerender_url(
-        mut self,
+        self,
         prerender_service_url: &str,
+        token: String,
     ) -> Result<Prerender, PrerenderError> {
-        let result = Url::parse(prerender_service_url).map_err(|_| PrerenderError::InvalidUrl)?;
+        let prerender_service_url = Url::parse(prerender_service_url).map_err(|_| PrerenderError::InvalidUrl)?;
 
-        Ok(Prerender {
-            prerender_service_url: result,
-            inner_client: Default::default(),
-        })
+        let inner = Inner {
+            prerender_service_url,
+            inner_client: Client::default(),
+            prerender_token: token,
+        };
+
+        Ok(Prerender { inner: Rc::new(inner) })
     }
 }
 
 impl Prerender {
-    pub fn builder() -> PrerenderBuilder {
+    pub const fn builder() -> PrerenderBuilder {
         PrerenderBuilder {}
     }
 }
@@ -98,11 +106,7 @@ pub(crate) fn should_prerender(req: &ServiceRequest) -> bool {
     // check for ignored extensions
     let is_ignored_extension_url = req.uri().path_and_query().map_or_else(
         || false,
-        |path_query| {
-            IGNORED_EXTENSIONS
-                .iter()
-                .any(|ext| path_query.as_str().contains(ext))
-        },
+        |path_query| IGNORED_EXTENSIONS.iter().any(|ext| path_query.as_str().contains(ext)),
     );
     if is_ignored_extension_url {
         return false;
@@ -114,44 +118,28 @@ pub(crate) fn should_prerender(req: &ServiceRequest) -> bool {
 #[derive(Debug)]
 pub struct PrerenderMiddleware<S> {
     pub(crate) service: S,
-    prerender_service_url: Url,
-    inner_client: Client,
+    inner: Rc<Inner>,
 }
 
 impl<S> PrerenderMiddleware<S> {
-    pub fn prepare_build_api_url(&self, req: &ServiceRequest) -> String {
+    pub fn prepare_build_api_url(service_url: &Url, req: &ServiceRequest) -> String {
         let req_uri = req.uri();
         let req_headers = req.headers();
 
-        // TODO: this.host?
         let host = req
             .uri()
             .host()
-            .or_else(|| {
-                req_headers
-                    .get("X-Forwarded-Host")
-                    .and_then(|hdr| hdr.to_str().ok())
-            })
-            .or_else(|| {
-                req_headers
-                    .get(header::HOST)
-                    .and_then(|hdr| hdr.to_str().ok())
-            })
+            .or_else(|| req_headers.get("X-Forwarded-Host").and_then(|hdr| hdr.to_str().ok()))
+            .or_else(|| req_headers.get(header::HOST).and_then(|hdr| hdr.to_str().ok()))
             .unwrap();
 
         let scheme = req.uri().scheme_str().unwrap_or("http");
         let url_path_query = req_uri.path_and_query().map(PathAndQuery::as_str).unwrap();
 
-        format!(
-            "{}{}://{}{}",
-            self.prerender_service_url, scheme, host, url_path_query
-        )
+        format!("{}{}://{}{}", service_url, scheme, host, url_path_query)
     }
 
-    pub async fn get_rendered_response(
-        &self,
-        req: ServiceRequest,
-    ) -> Result<ServiceResponse, PrerenderError> {
+    pub async fn get_rendered_response(inner: &Inner, req: ServiceRequest) -> Result<ServiceResponse, PrerenderError> {
         let mut prerender_request_headers = HeaderMap::new();
         let forward_headers = true;
 
@@ -161,19 +149,20 @@ impl<S> PrerenderMiddleware<S> {
         }
 
         prerender_request_headers.append(header::ACCEPT_ENCODING, "gzip".parse().unwrap());
+        prerender_request_headers.append(
+            "X-Prerender-Token".parse().unwrap(),
+            inner.prerender_token.parse().unwrap(),
+        );
 
-        // TODO: accept `X-Prerender-Token`
-        // prerender_request_headers.insert("X-Prerender-Token", pre_render_token);
-
-        let url_to_request = self.prepare_build_api_url(&req);
-        let prerender_response = self
+        let url_to_request = Self::prepare_build_api_url(&inner.prerender_service_url, &req);
+        let prerender_response = inner
             .inner_client
             .get(url_to_request)
             .send()
-            .and_then(|a| a.bytes())
+            .and_then(|resp| resp.bytes())
             .await?;
 
-        let http_response = HttpResponse::Ok().body(prerender_response);
+        let http_response = HttpResponse::Ok().content_type("text/html").body(prerender_response);
         Ok(req.into_response(http_response))
     }
 }
@@ -196,8 +185,8 @@ where
             return Box::pin(async move { fut.await });
         }
 
-        // let response = self.get_rendered_response(req).await.map_err(|e| );
-        todo!()
+        let inner = Rc::clone(&self.inner);
+        Box::pin(async move { Self::get_rendered_response(&inner, req).await.map_err(Into::into) })
     }
 }
 
@@ -215,27 +204,28 @@ where
     fn new_transform(&self, service: S) -> Self::Future {
         future::ok(PrerenderMiddleware {
             service,
-            prerender_service_url: self.prerender_service_url.clone(),
-            inner_client: self.inner_client.clone(),
+            inner: Rc::clone(&self.inner),
         })
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::middleware::{prerender_url, should_prerender, Prerender, PrerenderMiddleware};
-    use actix_service::Transform;
+
     use actix_web::http::header;
     use actix_web::middleware::Compat;
     use actix_web::test::TestRequest;
-    use actix_web::{test, App};
+    use actix_web::App;
 
-    fn init_logger() {
+    use crate::middleware::{prerender_url, should_prerender, Prerender, PrerenderMiddleware};
+
+    fn _init_logger() {
         let _ = env_logger::builder().is_test(true).try_init();
     }
 
-    fn compat_compat() {
-        let _ = App::new().wrap(Compat::new(Prerender::builder().use_prerender_io()));
+    #[actix_web::test]
+    async fn compat_compat() {
+        App::new().wrap(Compat::new(Prerender::builder().use_prerender_io("".to_string())));
     }
 
     #[actix_web::test]
@@ -292,8 +282,8 @@ mod tests {
         assert!(!render);
     }
 
-    fn create_middleware() -> Prerender {
-        Prerender::builder().use_prerender_io()
+    fn _create_middleware() -> Prerender {
+        Prerender::builder().use_prerender_io("".to_string())
     }
 
     #[actix_web::test]
@@ -308,13 +298,13 @@ mod tests {
             .uri(req_url)
             .to_srv_request();
 
-        let middleware = create_middleware()
-            .new_transform(test::ok_service())
-            .into_inner()
-            .unwrap();
+        // let middleware = create_middleware()
+        //     .new_transform(test::ok_service())
+        //     .into_inner()
+        //     .unwrap();
 
         assert_eq!(
-            middleware.prepare_build_api_url(&req),
+            PrerenderMiddleware::<()>::prepare_build_api_url(&prerender_url(), &req),
             format!("{}{}", prerender_url(), req_url)
         );
     }
