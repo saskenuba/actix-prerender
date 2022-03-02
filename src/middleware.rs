@@ -1,6 +1,6 @@
-use actix_service::{Service, Transform};
-use actix_utils::future;
-use actix_utils::future::Ready;
+use std::rc::Rc;
+
+use actix_service::Service;
 use actix_web::body::BoxBody;
 use actix_web::dev::{ServiceRequest, ServiceResponse};
 use actix_web::http::header::HeaderMap;
@@ -10,64 +10,19 @@ use actix_web::{Error, HttpResponse};
 use futures_util::future::LocalBoxFuture;
 use futures_util::TryFutureExt;
 use reqwest::Client;
-use std::rc::Rc;
 use url::Url;
 
-use crate::errors::PrerenderError;
+use crate::error::PrerenderError;
 use crate::{IGNORED_EXTENSIONS, USER_AGENTS};
 
 #[derive(Debug, Clone)]
-pub struct Prerender {
-    inner: Rc<Inner>,
-}
-
-#[derive(Debug, Clone)]
 pub struct Inner {
-    prerender_service_url: Url,
-    inner_client: Client,
-    prerender_token: String,
+    pub(crate) prerender_service_url: Url,
+    pub(crate) inner_client: Client,
+    pub(crate) prerender_token: String,
 }
 
-impl Prerender {}
-
-#[derive(Debug, Clone)]
-pub struct PrerenderBuilder {}
-
-impl PrerenderBuilder {
-    pub fn use_prerender_io(self, token: String) -> Prerender {
-        let inner = Inner {
-            prerender_service_url: prerender_url(),
-            inner_client: Client::default(),
-            prerender_token: token,
-        };
-
-        Prerender { inner: Rc::new(inner) }
-    }
-
-    pub fn use_custom_prerender_url(
-        self,
-        prerender_service_url: &str,
-        token: String,
-    ) -> Result<Prerender, PrerenderError> {
-        let prerender_service_url = Url::parse(prerender_service_url).map_err(|_| PrerenderError::InvalidUrl)?;
-
-        let inner = Inner {
-            prerender_service_url,
-            inner_client: Client::default(),
-            prerender_token: token,
-        };
-
-        Ok(Prerender { inner: Rc::new(inner) })
-    }
-}
-
-impl Prerender {
-    pub const fn builder() -> PrerenderBuilder {
-        PrerenderBuilder {}
-    }
-}
-
-fn prerender_url() -> Url {
+pub(crate) fn prerender_url() -> Url {
     Url::parse("https://service.prerender.io").unwrap()
 }
 
@@ -118,7 +73,7 @@ pub(crate) fn should_prerender(req: &ServiceRequest) -> bool {
 #[derive(Debug)]
 pub struct PrerenderMiddleware<S> {
     pub(crate) service: S,
-    inner: Rc<Inner>,
+    pub(crate) inner: Rc<Inner>,
 }
 
 impl<S> PrerenderMiddleware<S> {
@@ -190,34 +145,16 @@ where
     }
 }
 
-impl<S> Transform<S, ServiceRequest> for Prerender
-where
-    S: Service<ServiceRequest, Response = ServiceResponse, Error = Error>,
-    S::Future: 'static,
-{
-    type Response = ServiceResponse<BoxBody>;
-    type Error = Error;
-    type Transform = PrerenderMiddleware<S>;
-    type InitError = ();
-    type Future = Ready<Result<Self::Transform, Self::InitError>>;
-
-    fn new_transform(&self, service: S) -> Self::Future {
-        future::ok(PrerenderMiddleware {
-            service,
-            inner: Rc::clone(&self.inner),
-        })
-    }
-}
-
 #[cfg(test)]
 mod tests {
 
+    use crate::builder::Prerender;
     use actix_web::http::header;
     use actix_web::middleware::Compat;
     use actix_web::test::TestRequest;
     use actix_web::App;
 
-    use crate::middleware::{prerender_url, should_prerender, Prerender, PrerenderMiddleware};
+    use crate::middleware::{prerender_url, should_prerender, PrerenderMiddleware};
 
     fn _init_logger() {
         let _ = env_logger::builder().is_test(true).try_init();
@@ -225,7 +162,7 @@ mod tests {
 
     #[actix_web::test]
     async fn compat_compat() {
-        App::new().wrap(Compat::new(Prerender::builder().use_prerender_io("".to_string())));
+        App::new().wrap(Compat::new(Prerender::build().use_prerender_io("".to_string())));
     }
 
     #[actix_web::test]
@@ -283,7 +220,7 @@ mod tests {
     }
 
     fn _create_middleware() -> Prerender {
-        Prerender::builder().use_prerender_io("".to_string())
+        Prerender::build().use_prerender_io("".to_string())
     }
 
     #[actix_web::test]

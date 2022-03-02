@@ -1,7 +1,19 @@
 # actix-prerender
 
-A very simple middleware that sends requests which comes from common crawler
-user-agents to be pre-rendered via "prerender".
+A simple middleware that sends HTTP requests from known crawlers user-agents to
+be rendered by an external prerender service URL or
+[prerender.io](https://prerender.io "Prerender.io website").
 
-It accepts the external service provided by `prerender.io`, or a custom external
-`prerender_service_url`.
+## Usage
+
+```rust
+```
+
+
+## Installation
+
+Add this into your `Cargo.toml`
+
+```toml
+actix-prerender = { git = "https://github.com/saskenuba/actix-prerender" }
+```

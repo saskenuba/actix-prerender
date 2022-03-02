@@ -1,4 +1,29 @@
-//! Prerender for Actix Web
+//! # Example
+//! ```no_run
+//! use actix_prerender::Prerender;
+//! use actix_web::{get, http, web, App, HttpRequest, HttpResponse, HttpServer};
+//!
+//! #[get("/index.html")]
+//! async fn index(req: HttpRequest) -> &'static str {
+//!     "<p>Hello World!</p>"
+//! }
+//!
+//! #[actix_web::main]
+//! async fn main() -> std::io::Result<()> {
+//!     HttpServer::new(|| {
+//!         let prerender = Prerender::build().use_prerender_io("service_token".to_string());
+//!
+//!         App::new()
+//!             .wrap(prerender)
+//!             .service(index)
+//!     })
+//!     .bind(("127.0.0.1", 8080))?
+//!     .run()
+//!     .await;
+//!
+//!     Ok(())
+//! }
+//! ```
 
 #![forbid(unsafe_code)]
 #![deny(nonstandard_style)]
@@ -9,23 +34,11 @@
 
 use consts::{IGNORED_EXTENSIONS, USER_AGENTS};
 
+mod builder;
 mod consts;
-pub mod errors;
-pub mod middleware;
+mod error;
+mod middleware;
 
-// impl<S, B> Service<ServiceRequest> for PrerenderMiddleWare
-// where
-//     S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error>,
-//     S::Future: 'static,
-//     B: MessageBody + 'static,
-// {
-//     type Response = ServiceResponse<EitherBody<B>>;
-//     type Error = Error;
-//     type Future = LocalBoxFuture<'static, Result<ServiceResponse<EitherBody<B>>, Error>>;
-//
-//     actix_service::forward_ready!(service);
-//
-//     fn call(&self, req: ServiceRequest) -> Self::Future {
-//         todo!()
-//     }
-// }
+pub use builder::Prerender;
+pub use error::PrerenderError;
+pub use middleware::PrerenderMiddleware;
