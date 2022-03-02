@@ -85,6 +85,18 @@ impl<S> PrerenderMiddleware<S> {
         let req_uri = req.uri();
         let req_headers = req.headers();
 
+        let mut scheme = req.uri().scheme_str().unwrap_or("http");
+
+        // handle visitors using Cloudflare Flexible SSL
+        if let Some(Ok(hdr_value)) = req_headers.get("cf-visitor").map(|val| val.to_str()) {
+            let index = hdr_value.rmatch_indices("http").collect::<Vec<_>>().remove(0).0;
+            scheme = &hdr_value[index..hdr_value.len() - 1];
+        }
+
+        if let Some(Ok(hdr_value)) = req_headers.get("X-Forwarded-Proto").map(|val| val.to_str()) {
+            scheme = hdr_value.split(',').collect::<Vec<_>>().remove(0);
+        }
+
         let host = req
             .uri()
             .host()
@@ -92,9 +104,7 @@ impl<S> PrerenderMiddleware<S> {
             .or_else(|| req_headers.get(header::HOST).and_then(|hdr| hdr.to_str().ok()))
             .unwrap();
 
-        let scheme = req.uri().scheme_str().unwrap_or("http");
         let url_path_query = req_uri.path_and_query().map(PathAndQuery::as_str).unwrap();
-
         format!("{}render?url={}://{}{}", service_url, scheme, host, url_path_query)
     }
 
@@ -213,8 +223,7 @@ mod tests {
             .uri("http://yourserver.com/clothes/tshirts/blue.jpg")
             .to_srv_request();
 
-        let render = should_prerender(&req);
-        assert!(!render);
+        assert!(!should_prerender(&req));
     }
 
     #[actix_web::test]
@@ -236,7 +245,7 @@ mod tests {
     }
 
     #[actix_web::test]
-    async fn test_redirect_url() {
+    async fn test_url_common() {
         let req_url = "http://yourserver.com/clothes/tshirts/red-dotted";
 
         let req = TestRequest::post()
@@ -255,6 +264,81 @@ mod tests {
         assert_eq!(
             PrerenderMiddleware::<()>::prepare_build_api_url(&Url::parse("http://localhost:5000").unwrap(), &req),
             format!("http://localhost:5000/render?url={}", req_url)
+        );
+    }
+
+    #[actix_web::test]
+    async fn test_url_https() {
+        let req_url = "https://mercadoskin.com.br/market/csgo";
+
+        let req = TestRequest::get()
+            .insert_header((
+                header::USER_AGENT,
+                "LinkedInBot/1.0 (compatible; Mozilla/5.0; Jakarta Commons-HttpClient/3.1 +http://www.linkedin.com)",
+            ))
+            .uri(req_url)
+            .to_srv_request();
+
+        assert_eq!(
+            PrerenderMiddleware::<()>::prepare_build_api_url(&Url::parse("http://localhost:5000").unwrap(), &req),
+            format!("http://localhost:5000/render?url={}", req_url)
+        );
+    }
+
+    #[actix_web::test]
+    async fn test_url_x_forwarded_proto_single() {
+        let req_url = "http://mercadoskin.com.br/market/csgo";
+
+        let req = TestRequest::get()
+            .insert_header((
+                header::USER_AGENT,
+                "LinkedInBot/1.0 (compatible; Mozilla/5.0; Jakarta Commons-HttpClient/3.1 +http://www.linkedin.com)",
+            ))
+            .insert_header(("X-Forwarded-Proto", "https"))
+            .uri(req_url)
+            .to_srv_request();
+
+        assert_eq!(
+            PrerenderMiddleware::<()>::prepare_build_api_url(&Url::parse("http://localhost:5000").unwrap(), &req),
+            "http://localhost:5000/render?url=https://mercadoskin.com.br/market/csgo".to_string()
+        );
+    }
+
+    #[actix_web::test]
+    async fn test_url_x_forwarded_proto_double() {
+        let req_url = "http://mercadoskin.com.br/market/csgo";
+
+        let req = TestRequest::get()
+            .insert_header((
+                header::USER_AGENT,
+                "LinkedInBot/1.0 (compatible; Mozilla/5.0; Jakarta Commons-HttpClient/3.1 +http://www.linkedin.com)",
+            ))
+            .insert_header(("X-Forwarded-Proto", "https,http"))
+            .uri(req_url)
+            .to_srv_request();
+
+        assert_eq!(
+            PrerenderMiddleware::<()>::prepare_build_api_url(&Url::parse("http://localhost:5000").unwrap(), &req),
+            "http://localhost:5000/render?url=https://mercadoskin.com.br/market/csgo".to_string()
+        );
+    }
+
+    #[actix_web::test]
+    async fn test_url_cf_visitor() {
+        let req_url = "http://mercadoskin.com.br/market/csgo";
+
+        let req = TestRequest::get()
+            .insert_header((
+                header::USER_AGENT,
+                "LinkedInBot/1.0 (compatible; Mozilla/5.0; Jakarta Commons-HttpClient/3.1 +http://www.linkedin.com)",
+            ))
+            .insert_header(("cf-visitor", r#""scheme":"https""#))
+            .uri(req_url)
+            .to_srv_request();
+
+        assert_eq!(
+            PrerenderMiddleware::<()>::prepare_build_api_url(&Url::parse("http://localhost:5000").unwrap(), &req),
+            "http://localhost:5000/render?url=https://mercadoskin.com.br/market/csgo".to_string()
         );
     }
 }
