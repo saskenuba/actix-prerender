@@ -5,29 +5,51 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## v0.2.0 (2022-03-02)
+## 0.2.1 (2022-03-02)
 
 ### New Features
 
- - <csr-id-06d36fe6d779584d110214236697f62f6043ad67/> rustfmt file
-
- - <csr-id-e885d20622751c17db4ef08c56a858fd5501857e/> first commit
-
-
-### Bug Fixes
-
- - <csr-id-cdb519c2f7a48f056ac4f77a95c0ea0b776980ce/> removed "prerender" token from builder if using custom URL
-
- - <csr-id-215a29197af06325c3a96cd0b07d89f6e8edfa9d/> repo updated, changed changelog
-
- - <csr-id-6882c0705a33b23b1a889560f911fea88d95708e/> now working properly by changing BoxBody -> EitherBody
-
+ - <csr-id-669d8eb3109438437cdf2c9450d62c8121863ad3/> added special handling to `cf-visitor` and `X-Forwarded-Proto`
+   .. and tests
+ - <csr-id-47c258c8c8f8daafff11b847595a6ba89dbc9552/> added `forward_headers` on builder. defaults to false
 
 ### Commit Statistics
 
 <csr-read-only-do-not-edit/>
 
- - 10 commits contributed to the release over the course of 1 calendar day.
+ - 2 commits contributed to the release.
+ - 2 commits where understood as [conventional](https://www.conventionalcommits.org).
+ - 0 issues like '(#ID)' where seen in commit messages
+
+### Commit Details
+
+<csr-read-only-do-not-edit/>
+
+<details><summary>view details</summary>
+
+ * **Uncategorized**
+    - added special handling to `cf-visitor` and `X-Forwarded-Proto` ([`669d8eb`](https://github.comgit//saskenuba/actix-prerender/commit/669d8eb3109438437cdf2c9450d62c8121863ad3))
+    - added `forward_headers` on builder. defaults to false ([`47c258c`](https://github.comgit//saskenuba/actix-prerender/commit/47c258c8c8f8daafff11b847595a6ba89dbc9552))
+</details>
+
+## v0.2.0 (2022-03-02)
+
+### New Features
+
+ - <csr-id-06d36fe6d779584d110214236697f62f6043ad67/> rustfmt file
+ - <csr-id-e885d20622751c17db4ef08c56a858fd5501857e/> first commit
+
+### Bug Fixes
+
+ - <csr-id-cdb519c2f7a48f056ac4f77a95c0ea0b776980ce/> removed "prerender" token from builder if using custom URL
+ - <csr-id-215a29197af06325c3a96cd0b07d89f6e8edfa9d/> repo updated, changed changelog
+ - <csr-id-6882c0705a33b23b1a889560f911fea88d95708e/> now working properly by changing BoxBody -> EitherBody
+
+### Commit Statistics
+
+<csr-read-only-do-not-edit/>
+
+ - 11 commits contributed to the release over the course of 1 calendar day.
  - 9 commits where understood as [conventional](https://www.conventionalcommits.org).
  - 0 issues like '(#ID)' where seen in commit messages
 
@@ -38,6 +60,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <details><summary>view details</summary>
 
  * **Uncategorized**
+    - Release actix-prerender v0.2.0 ([`6850a8c`](https://github.comgit//saskenuba/actix-prerender/commit/6850a8c73f4d18d3d41fe13d380c5b43c9b38ca4))
     - removed "prerender" token from builder if using custom URL ([`cdb519c`](https://github.comgit//saskenuba/actix-prerender/commit/cdb519c2f7a48f056ac4f77a95c0ea0b776980ce))
     - repo updated, changed changelog ([`215a291`](https://github.comgit//saskenuba/actix-prerender/commit/215a29197af06325c3a96cd0b07d89f6e8edfa9d))
     - Release actix-prerender v0.1.0 ([`deb3d1c`](https://github.comgit//saskenuba/actix-prerender/commit/deb3d1ceb8c368542b7e699a4fda43043046da2e))

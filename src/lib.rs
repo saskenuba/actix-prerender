@@ -27,7 +27,7 @@
 
 #![forbid(unsafe_code)]
 #![deny(nonstandard_style)]
-#![allow(clippy::must_use_candidate, clippy::missing_panics_doc)]
+#![allow(clippy::must_use_candidate, clippy::missing_panics_doc, clippy::missing_errors_doc)]
 #![warn(future_incompatible, missing_debug_implementations)]
 #![doc(html_logo_url = "https://actix.rs/img/logo.png")]
 #![doc(html_favicon_url = "https://actix.rs/favicon.ico")]
