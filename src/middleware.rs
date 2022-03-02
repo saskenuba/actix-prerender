@@ -9,7 +9,7 @@ use actix_web::http::{header, Method};
 use actix_web::{Error, HttpResponse};
 use futures_util::future::LocalBoxFuture;
 use futures_util::TryFutureExt;
-use log::debug;
+use log::trace;
 use reqwest::Client;
 use url::Url;
 
@@ -20,7 +20,7 @@ use crate::{IGNORED_EXTENSIONS, USER_AGENTS};
 pub struct Inner {
     pub(crate) prerender_service_url: Url,
     pub(crate) inner_client: Client,
-    pub(crate) prerender_token: String,
+    pub(crate) prerender_token: Option<String>,
 }
 
 pub(crate) fn prerender_url() -> Url {
@@ -105,14 +105,14 @@ impl<S> PrerenderMiddleware<S> {
         }
 
         prerender_request_headers.append(header::ACCEPT_ENCODING, "gzip".parse().unwrap());
-        prerender_request_headers.append(
-            "X-Prerender-Token".parse().unwrap(),
-            inner.prerender_token.parse().unwrap(),
-        );
+
+        if let Some(token) = &inner.prerender_token {
+            prerender_request_headers.append("X-Prerender-Token".parse().unwrap(), token.parse().unwrap());
+        }
 
         let url_to_request = Self::prepare_build_api_url(&inner.prerender_service_url, &req);
 
-        debug!("sending request to: {}", &url_to_request);
+        trace!("sending request to: {}", &url_to_request);
         let prerender_response = inner
             .inner_client
             .get(url_to_request)

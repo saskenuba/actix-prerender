@@ -35,7 +35,7 @@ use url::Url;
 /// use actix_web::http::header;
 ///
 /// let token = "prerender service token".to_string();
-/// let prerender = Prerender::build().use_custom_prerender_url("https://localhost:5001", token);
+/// let prerender = Prerender::build().use_custom_prerender_url("https://localhost:5001");
 ///
 /// // `prerender` can now be used in `App::wrap`.
 /// ```
@@ -52,23 +52,19 @@ impl PrerenderBuilder {
         let inner = Inner {
             prerender_service_url: middleware::prerender_url(),
             inner_client: Client::default(),
-            prerender_token: token,
+            prerender_token: Some(token),
         };
 
         Prerender { inner: Rc::new(inner) }
     }
 
-    pub fn use_custom_prerender_url(
-        self,
-        prerender_service_url: &str,
-        token: String,
-    ) -> Result<Prerender, PrerenderError> {
+    pub fn use_custom_prerender_url(self, prerender_service_url: &str) -> Result<Prerender, PrerenderError> {
         let prerender_service_url = Url::parse(prerender_service_url).map_err(|_| PrerenderError::InvalidUrl)?;
 
         let inner = Inner {
             prerender_service_url,
             inner_client: Client::default(),
-            prerender_token: token,
+            prerender_token: None,
         };
 
         Ok(Prerender { inner: Rc::new(inner) })
