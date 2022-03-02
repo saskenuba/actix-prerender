@@ -45,7 +45,9 @@ pub struct Prerender {
 }
 
 #[derive(Debug, Clone)]
-pub struct PrerenderBuilder {}
+pub struct PrerenderBuilder {
+    pub(crate) forward_headers: bool,
+}
 
 impl PrerenderBuilder {
     pub fn use_prerender_io(self, token: String) -> Prerender {
@@ -53,6 +55,7 @@ impl PrerenderBuilder {
             prerender_service_url: middleware::prerender_url(),
             inner_client: Client::default(),
             prerender_token: Some(token),
+            forward_headers: self.forward_headers,
         };
 
         Prerender { inner: Rc::new(inner) }
@@ -65,15 +68,21 @@ impl PrerenderBuilder {
             prerender_service_url,
             inner_client: Client::default(),
             prerender_token: None,
+            forward_headers: self.forward_headers,
         };
 
         Ok(Prerender { inner: Rc::new(inner) })
+    }
+
+    pub const fn forward_headers(mut self) -> Self {
+        self.forward_headers = true;
+        self
     }
 }
 
 impl Prerender {
     pub const fn build() -> PrerenderBuilder {
-        PrerenderBuilder {}
+        PrerenderBuilder { forward_headers: false }
     }
 }
 

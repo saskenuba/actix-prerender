@@ -21,6 +21,9 @@ pub struct Inner {
     pub(crate) prerender_service_url: Url,
     pub(crate) inner_client: Client,
     pub(crate) prerender_token: Option<String>,
+
+    // Should forward request headers to Prerender.
+    pub(crate) forward_headers: bool,
 }
 
 pub(crate) fn prerender_url() -> Url {
@@ -97,9 +100,8 @@ impl<S> PrerenderMiddleware<S> {
 
     pub async fn get_rendered_response(inner: &Inner, req: ServiceRequest) -> Result<ServiceResponse, PrerenderError> {
         let mut prerender_request_headers = HeaderMap::new();
-        let forward_headers = true;
 
-        if forward_headers {
+        if inner.forward_headers {
             prerender_request_headers = req.headers().clone();
             prerender_request_headers.remove(header::HOST);
         }
