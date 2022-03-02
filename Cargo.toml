@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 authors = ["Martin Mariano <contato@martinmariano.com>"]
 description = "Actix middleware that sends requests to Prerender.io or a custom Prerender service URL."
-repository = ""
+repository = "https://github.com/saskenuba/actix-prerender"
 license = "MIT"
 
 [dependencies]

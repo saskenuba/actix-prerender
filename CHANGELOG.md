@@ -9,12 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### New Features
 
- - <csr-id-5688e910133f52e2a5133ee944bf047707a53021/> more work, improved inner ergonomics, added error types
-
- - <csr-id-e1ce74e632eff7e472e84aa74925b461a68da472/> rustfmt file
-
- - <csr-id-e885d20622751c17db4ef08c56a858fd5501857e/> first commit
-
+ - Initial release
 
 ### Bug Fixes
 
@@ -44,4 +39,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Create ci.yml ([`b4906cd`](https://github.comgit//saskenuba/actix-prerender/commit/b4906cd70290d65fa2a585c15eb249a6139ac6e7))
     - first commit ([`e885d20`](https://github.comgit//saskenuba/actix-prerender/commit/e885d20622751c17db4ef08c56a858fd5501857e))
 </details>
-
