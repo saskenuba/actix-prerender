@@ -36,7 +36,7 @@ pub const USER_AGENTS: &[&str; 35] = &[
     "SeznamBot",
 ];
 
-pub const IGNORED_EXTENSIONS: &[&str; 41] = &[
+pub const IGNORED_EXTENSIONS: &[&str; 42] = &[
     ".css",
     ".xml",
     ".less",
@@ -78,4 +78,5 @@ pub const IGNORED_EXTENSIONS: &[&str; 41] = &[
     ".ttf",
     ".svg",
     ".webmanifest",
+    ".webp",
 ];

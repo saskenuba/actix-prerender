@@ -6,6 +6,7 @@ use actix_utils::future::Ready;
 use actix_web::body::{EitherBody, MessageBody};
 use actix_web::dev::{ServiceRequest, ServiceResponse};
 use actix_web::Error;
+use reqwest::header::HeaderMap;
 use reqwest::Client;
 use std::rc::Rc;
 use url::Url;
@@ -39,41 +40,53 @@ use url::Url;
 ///
 /// // `prerender` can now be used in `App::wrap`.
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Prerender {
     inner: Rc<Inner>,
 }
 
-#[derive(Debug, Clone)]
+#[derive()]
 pub struct PrerenderBuilder {
     pub(crate) forward_headers: bool,
+    pub(crate) before_render_fn: Option<fn(&ServiceRequest, &mut HeaderMap)>,
 }
 
 impl PrerenderBuilder {
+    /// Creates a `Prerender` middleware that delegate requests to the web `prerender.io` service.
     pub fn use_prerender_io(self, token: String) -> Prerender {
         let inner = Inner {
-            prerender_service_url: middleware::prerender_url(),
-            inner_client: Client::default(),
-            prerender_token: Some(token),
+            before_render_fn: self.before_render_fn,
             forward_headers: self.forward_headers,
+            inner_client: Client::default(),
+            prerender_service_url: middleware::prerender_url(),
+            prerender_token: Some(token),
         };
 
         Prerender { inner: Rc::new(inner) }
     }
 
+    /// Creates a `Prerender` middleware that delegates crawler requests to the custom `prerender_service_url`.
     pub fn use_custom_prerender_url(self, prerender_service_url: &str) -> Result<Prerender, PrerenderError> {
         let prerender_service_url = Url::parse(prerender_service_url).map_err(|_| PrerenderError::InvalidUrl)?;
 
         let inner = Inner {
-            prerender_service_url,
-            inner_client: Client::default(),
-            prerender_token: None,
+            before_render_fn: self.before_render_fn,
             forward_headers: self.forward_headers,
+            inner_client: Client::default(),
+            prerender_service_url,
+            prerender_token: None,
         };
 
         Ok(Prerender { inner: Rc::new(inner) })
     }
 
+    /// Allow you to inspect and modify the `HeaderMap` before the request is sent to the `Prerender` service.
+    pub fn set_before_render_fn(mut self, prerender_func: fn(req: &ServiceRequest, headers: &mut HeaderMap)) -> Self {
+        self.before_render_fn = Some(prerender_func);
+        self
+    }
+
+    /// Sets the middleware to forward all request headers to the `Prerender` service.
     pub const fn forward_headers(mut self) -> Self {
         self.forward_headers = true;
         self
@@ -81,8 +94,11 @@ impl PrerenderBuilder {
 }
 
 impl Prerender {
-    pub const fn build() -> PrerenderBuilder {
-        PrerenderBuilder { forward_headers: false }
+    pub fn build() -> PrerenderBuilder {
+        PrerenderBuilder {
+            forward_headers: false,
+            before_render_fn: None,
+        }
     }
 }
 
