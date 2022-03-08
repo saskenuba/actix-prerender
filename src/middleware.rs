@@ -3,6 +3,7 @@ use std::rc::Rc;
 use actix_service::Service;
 use actix_web::body::{EitherBody, MessageBody};
 use actix_web::dev::{ServiceRequest, ServiceResponse};
+use actix_web::http::header::ContentEncoding;
 use actix_web::http::uri::PathAndQuery;
 use actix_web::http::{header, Method};
 use actix_web::{Error, HttpResponse};
@@ -119,13 +120,13 @@ impl<S> PrerenderMiddleware<S> {
             prerender_headers.remove(header::HOST);
         }
 
-        prerender_headers.append(header::ACCEPT_ENCODING, "gzip".parse().unwrap());
+        prerender_headers.insert(header::ACCEPT_ENCODING, ContentEncoding::Gzip.to_header_value());
         if let Some(token) = &inner.prerender_token {
             prerender_headers.append("X-Prerender-Token", token.parse().unwrap());
         }
 
-        if let Some(function) = &inner.before_render_fn {
-            function(&req, &mut prerender_headers);
+        if let Some(before_render_fn) = &inner.before_render_fn {
+            before_render_fn(&req, &mut prerender_headers);
         }
 
         let url_to_request = Self::prepare_build_api_url(&inner.prerender_service_url, &req);

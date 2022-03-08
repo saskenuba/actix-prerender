@@ -51,13 +51,21 @@ pub struct PrerenderBuilder {
     pub(crate) before_render_fn: Option<fn(&ServiceRequest, &mut HeaderMap)>,
 }
 
+fn default_client() -> Client {
+    Client::builder()
+        .gzip(true)
+        .timeout(std::time::Duration::new(25, 0))
+        .build()
+        .unwrap()
+}
+
 impl PrerenderBuilder {
     /// Creates a `Prerender` middleware that delegate requests to the web `prerender.io` service.
     pub fn use_prerender_io(self, token: String) -> Prerender {
         let inner = Inner {
             before_render_fn: self.before_render_fn,
             forward_headers: self.forward_headers,
-            inner_client: Client::default(),
+            inner_client: default_client(),
             prerender_service_url: middleware::prerender_url(),
             prerender_token: Some(token),
         };
@@ -72,7 +80,7 @@ impl PrerenderBuilder {
         let inner = Inner {
             before_render_fn: self.before_render_fn,
             forward_headers: self.forward_headers,
-            inner_client: Client::default(),
+            inner_client: default_client(),
             prerender_service_url,
             prerender_token: None,
         };
