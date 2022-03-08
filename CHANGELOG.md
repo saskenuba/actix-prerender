@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.3 (2022-03-08)
+
+### New Features
+
+ - <csr-id-2d974698ac0ce9e4f7124fc3d77dda3651f495ee/> added gzip auto-decoding
+
+
+### Commit Statistics
+
+<csr-read-only-do-not-edit/>
+
+ - 1 commit contributed to the release.
+ - 1 commit where understood as [conventional](https://www.conventionalcommits.org).
+ - 0 issues like '(#ID)' where seen in commit messages
+
+### Commit Details
+
+<csr-read-only-do-not-edit/>
+
+<details><summary>view details</summary>
+
+ * **Uncategorized**
+    - added gzip auto-decoding ([`2d97469`](https://github.comgit//saskenuba/actix-prerender/commit/2d974698ac0ce9e4f7124fc3d77dda3651f495ee))
+</details>
+
 ## 0.2.2 (2022-03-07)
 
 ### New Features
@@ -16,7 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <csr-read-only-do-not-edit/>
 
- - 2 commits contributed to the release over the course of 4 calendar days.
+ - 3 commits contributed to the release over the course of 4 calendar days.
  - 4 days passed between releases.
  - 2 commits where understood as [conventional](https://www.conventionalcommits.org).
  - 0 issues like '(#ID)' where seen in commit messages
@@ -28,6 +53,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <details><summary>view details</summary>
 
  * **Uncategorized**
+    - Release actix-prerender v0.2.2 ([`64bd575`](https://github.comgit//saskenuba/actix-prerender/commit/64bd575b250832146911337336ae02f48bd64b50))
     - added `set_before_render_fn`, to customize request headers ([`95e861d`](https://github.comgit//saskenuba/actix-prerender/commit/95e861de8513d8a5805021e1a0d5bf88125aa371))
     - improved README.md ([`29f6f6a`](https://github.comgit//saskenuba/actix-prerender/commit/29f6f6a04c2b6eb9a1802b54fb4ad7c402227557))
 </details>

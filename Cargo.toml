@@ -1,6 +1,6 @@
 [package]
 name = "actix-prerender"
-version = "0.2.2"
+version = "0.2.3"
 edition = "2021"
 authors = ["Martin Mariano <contato@martinmariano.com>"]
 description = "Actix middleware that sends requests to Prerender.io or a custom Prerender service URL."
