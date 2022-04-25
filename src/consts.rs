@@ -1,4 +1,4 @@
-pub const USER_AGENTS: &[&str; 35] = &[
+pub const USER_AGENTS: &[&str; 37] = &[
     "googlebot",
     "Yahoo! Slurp",
     "bingbot",
@@ -34,6 +34,8 @@ pub const USER_AGENTS: &[&str; 35] = &[
     "Chrome-Lighthouse",
     "TelegramBot",
     "SeznamBot",
+    "Screaming Frog SEO Spider",
+    "AhrefsBot",
 ];
 
 pub const IGNORED_EXTENSIONS: &[&str; 42] = &[
