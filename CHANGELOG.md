@@ -5,11 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 0.2.3 (2022-03-08)
+## 0.2.4 (2022-04-25)
 
-### New Features
+### Chore
 
- - <csr-id-2d974698ac0ce9e4f7124fc3d77dda3651f495ee/> added gzip auto-decoding
+ - <csr-id-7d3bd2b0cbfe7ed13086c22ff5178377339987a7/> added screaming frog and ahrefs user-agents
 
 
 ### Commit Statistics
@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <csr-read-only-do-not-edit/>
 
  - 1 commit contributed to the release.
+ - 48 days passed between releases.
  - 1 commit where understood as [conventional](https://www.conventionalcommits.org).
  - 0 issues like '(#ID)' where seen in commit messages
 
@@ -27,10 +28,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <details><summary>view details</summary>
 
  * **Uncategorized**
+    - added screaming frog and ahrefs user-agents ([`7d3bd2b`](https://github.comgit//saskenuba/actix-prerender/commit/7d3bd2b0cbfe7ed13086c22ff5178377339987a7))
+</details>
+
+## 0.2.3 (2022-03-08)
+
+### New Features
+
+ - <csr-id-2d974698ac0ce9e4f7124fc3d77dda3651f495ee/> added gzip auto-decoding
+
+### Commit Statistics
+
+<csr-read-only-do-not-edit/>
+
+ - 2 commits contributed to the release.
+ - 1 commit where understood as [conventional](https://www.conventionalcommits.org).
+ - 0 issues like '(#ID)' where seen in commit messages
+
+### Commit Details
+
+<csr-read-only-do-not-edit/>
+
+<details><summary>view details</summary>
+
+ * **Uncategorized**
+    - Release actix-prerender v0.2.3 ([`88b403c`](https://github.comgit//saskenuba/actix-prerender/commit/88b403c4ab2b75982bdd9cd4d4b7dc95ae57204f))
     - added gzip auto-decoding ([`2d97469`](https://github.comgit//saskenuba/actix-prerender/commit/2d974698ac0ce9e4f7124fc3d77dda3651f495ee))
 </details>
 
 ## 0.2.2 (2022-03-07)
+
+### Chore
+
+ - <csr-id-29f6f6a04c2b6eb9a1802b54fb4ad7c402227557/> improved README.md
+
 
 ### New Features
 
@@ -87,6 +118,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 </details>
 
 ## v0.2.0 (2022-03-02)
+
+### Refactor
+
+ - <csr-id-e44643b73340461b9adfb0f45e9f8fd6b37fbde4/> refactored into multiple modules, export builders
+
+
+### Other
+
+ - <csr-id-21d5f54f13abe310c25207568e517ee099ec0f1f/> added basic skeleton of Service and Transform to ...
+   PreheaderMiddleware
+ - <csr-id-35ef29199680903e82d5d82849f42ae4df1c1e85/> create ci.yml
+
+### Chore
+
+ - <csr-id-91d35eb0e76e420b45e12c45d3fa025afa24d63e/> more work, improved inner ergonomics, added error types
+
 
 ### New Features
 
